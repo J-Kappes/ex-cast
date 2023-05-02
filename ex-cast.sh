@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+bold=$(tput bold)
+normal=$(tput sgr0)
+
 function process_line(){
     line="$1"
     words=($1)
@@ -7,30 +10,23 @@ function process_line(){
     file=$(echo "$location" | cut -d":" -f 1)
     linenr=$(echo "$location" | cut -d":" -f 2)
     column=$(echo "$location" | cut -d":" -f 3)
-    echo "$file"
-    # echo "$linenr"
-    # echo "$column"
     let "column = $column - 2"
-    # echo "$column"
     type=${line#*‘}
     type=${type%%’*}
     type=" ($type)"
-    # echo "$type"
     sed_arg="$linenr""s/^\([^=]*=*\)/\1$type/"
-    # echo "$sed_arg"
-    command="sed -i '$sed_arg' $file"
-    # echo "$command"
-    eval "$command"
+    sed_command="sed -i '$sed_arg' $file"
+    eval "$sed_command"
+    echo "${bold}$file:$linenr:$column: ${normal}Added cast to${bold}$type"
 }
 
 function process(){
     while IFS= read -r line; do
         if [[ "$line" == *"without a cast"* ]]; then
-            # echo "$line"
             process_line "$line"
         fi
     done
 }
 
-command="$*"
-$command 2>&1 >/dev/null | process
+build_command="$*"
+$build_command 2>&1 >/dev/null | process
